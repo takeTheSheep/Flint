@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Флинт: Наследие пирата</title>
+  <!-- Подключение стилей -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Панель UI с ресурсами -->
+  <div id="ui-panel">
+    <div id="resource-panel">
+      <img src="assets/images/resurces_gold.png"   alt="Gold"><span id="gold">0</span>
+      <img src="assets/images/resurces_wood.png"   alt="Wood"><span id="wood">0</span>
+      <img src="assets/images/resurces_stone.png"  alt="Stone"><span id="stone">0</span>
+      <img src="assets/images/resurces_cristal.png" alt="Rubies"><span id="cristal">0</span>
+    </div>
+
+    <!-- Контекстное меню зданий -->
+    <div id="building-menu" class="hidden">
+      <!-- Крестик закрытия -->
+      <img id="menu-close" src="assets/images/crossMeny.png" alt="Close">
+      <div class="menu-content">
+        <div class="menu-left">
+          <!-- Изображение выбранного здания -->
+          <img id="menu-building-img" src="" alt="Building">
+        </div>
+        <div class="menu-right">
+          <!-- Заголовок, уровни, буфер, стоимость и кнопки -->
+          <h3 id="menu-title"></h3>
+          <p id="menu-level"></p>
+          <p id="menu-buffer"></p>
+          <p id="menu-cost"></p>
+          <div class="menu-buttons">
+            <button id="collect-btn">Собрать</button>
+            <button id="upgrade-btn">Улучшить</button>
+            <button id="speedup-btn">Ускорить</button>
+          </div>
+          <!-- Полоса прогресса улучшения -->
+          <div id="menu-progress" class="progress hidden">
+            <div id="menu-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Игровой канвас -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Скрипт со всей логикой -->
+  <script src="main.js"></script>
+</body>
+</html>

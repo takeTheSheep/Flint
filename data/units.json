@@ -1,0 +1,17 @@
+[
+    {
+      "id": "pirate",
+      "name": "Пират",
+      "hp": 100,
+      "damage": 20,
+      "cost": 200
+    },
+    {
+      "id": "gunner",
+      "name": "Стрелок",
+      "hp": 80,
+      "damage": 35,
+      "cost": 300
+    }
+  ]
+  
