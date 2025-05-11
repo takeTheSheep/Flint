@@ -154,6 +154,29 @@ body {
   color: #000;
 }
 
+#menu-harvest-progress {
+  position: relative;
+}
+
+#menu-harvest-bar {
+  width: 0%;
+  height: 100%;
+  background: #006400; /* Темно-зеленый цвет */
+}
+
+#menu-harvest-progress .progress-text {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+  line-height: 20px;
+  font-size: 14px;
+  color: #fff;
+  pointer-events: none; /* Чтобы текст не мешал кликам */
+}
+
 .icon-cost {
   width: 12px;
   height: 12px;
