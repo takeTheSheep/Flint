@@ -217,8 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
     finishUpgrade() {
       this.level++;
       this.upgrading = false;
-      // Возвращаем меню с обновлёнными данными
-      openMenu(this);
+
+      // Если меню открыто для текущего здания, обновляем его
+      if (selected === this) {
+        openMenu(this);
+      }
     }
 
     // =====  Обновление логики здания за кадр  =====
@@ -229,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const now = Date.now();
 
       // Логика добычи для шахты
-      if (this.kind === 'mine' && !this.upgrading) {
+      if (this.kind === 'mine') {
         const diff  = now - this.lastCollect;
         const ticks = Math.floor(diff / this.collectInterval);
         if (ticks > 0) {
@@ -237,12 +240,27 @@ document.addEventListener('DOMContentLoaded', () => {
           this.buffer = Math.min(this.buffer + ticks * amt, this.getBufferLimit());
           buffers[this.type] = this.buffer;
           this.lastCollect += ticks * this.collectInterval;
+
+          // Если меню открыто для текущего здания, обновляем буфер в UI
+          if (selected === this) {
+            bufferEl.textContent = `Буфер: ${formatNum(this.buffer)} / ${formatNum(this.getBufferLimit())}`;
+          }
         }
       }
 
       // Логика апгрейда
       if (this.upgrading) {
         const prog = (now - this.upgradeStart) / this.upgradeDuration;
+
+        // Обновляем шкалу прогресса, если меню открыто
+        if (selected === this) {
+          const progressBar = document.getElementById('menu-progress-bar');
+          const progressPercent = Math.min(Math.floor(prog * 100), 100);
+          progressBar.style.width = `${progressPercent}%`;
+          progressBar.textContent = `${progressPercent}%`;
+          document.getElementById('menu-progress').classList.remove('hidden');
+        }
+
         if (prog >= 1) {
           this.finishUpgrade();
         }
@@ -466,14 +484,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- кнопка «Ускорить» ----
     if (b.upgrading) {
-      const now   = Date.now();
+      const now = Date.now();
       const remMs = b.upgradeDuration - (now - b.upgradeStart);
-      const remMin= Math.max(remMs / 60000, 0);
-      const cost  = Math.ceil(remMin / 6);
-      speedupBtn.textContent    = `Ускорить (${cost} крист.)`;
-      speedupBtn.style.display  = 'inline-block';
+      const remMin = Math.max(remMs / 60000, 0);
+      const cost = Math.ceil(remMin / 6);
+      speedupBtn.innerHTML = `Ускорить (<img src="assets/images/resurces_cristal.png" class="icon-cost">${cost})`;
+      speedupBtn.style.display = 'inline-block';
+
+      // Показываем прогресс-бар только для текущего здания
+      const progressBar = document.getElementById('menu-progress-bar');
+      const progressPercent = Math.min(Math.floor((now - b.upgradeStart) / b.upgradeDuration * 100), 100);
+      progressBar.style.width = `${progressPercent}%`;
+      progressBar.textContent = `${progressPercent}%`;
+      document.getElementById('menu-progress').classList.remove('hidden');
     } else {
-      speedupBtn.style.display  = 'none';
+      // Скрываем прогресс-бар, если здание не улучшается
+      speedupBtn.style.display = 'none';
+      const progressBar = document.getElementById('menu-progress-bar');
+      progressBar.style.width = '0%';
+      progressBar.textContent = '';
+      document.getElementById('menu-progress').classList.add('hidden');
     }
 
     // ---- кнопка «Улучшить» всегда доступна ----
