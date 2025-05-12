@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Логика добычи для шахты
       if (this.kind === 'mine') {
-        const diff  = now - this.lastCollect;
+        const diff = now - this.lastCollect;
         const ticks = Math.floor(diff / this.collectInterval);
         if (ticks > 0) {
           const amt = this.getHarvestAmount();
@@ -251,14 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selected === this) {
           const harvestBar = document.getElementById('menu-harvest-bar');
           const harvestProgressText = document.querySelector('#menu-harvest-progress .progress-text');
-          
+
           const harvestProgress = Math.min((now - this.lastCollect) / this.collectInterval, 1);
           const nextHarvest = this.getHarvestAmount();
           const timeLeft = Math.ceil((1 - harvestProgress) * this.collectInterval / 1000);
-        
+
           harvestBar.style.width = `${harvestProgress * 100}%`;
-          
-          // Обновляем только текст в progress-text
           harvestProgressText.textContent = `${nextHarvest} через ${timeLeft} сек`;
         }
       }
@@ -472,69 +470,79 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- 1) Таверны: показываем только заголовок ----
     if (b.kind === 'tavern' || b.kind === 'beast_tavern') {
-      titleEl.textContent     = b.kind === 'tavern' ? 'Таверна' : 'Таверна для животных';
-      levelEl.textContent     = '';
-      bufferEl.textContent    = '';
-      costEl.textContent      = '';
-      collectBtn.style.display= 'none';
-      upgradeBtn.style.display= 'none';
-      speedupBtn.style.display= 'none';
-      document.getElementById('menu-harvest-progress').classList.add('hidden');
-      document.getElementById('menu-progress').classList.add('hidden');
-      return;
+        titleEl.textContent = b.kind === 'tavern' ? 'Таверна' : 'Таверна для животных';
+        levelEl.textContent = '';
+        bufferEl.textContent = '';
+        costEl.textContent = '';
+        collectBtn.style.display = 'none';
+        upgradeBtn.style.display = 'none';
+        speedupBtn.style.display = 'none';
+        document.getElementById('menu-harvest-progress').classList.add('hidden');
+        document.getElementById('menu-harvest-progress').style.display = 'none';
+        document.getElementById('menu-progress').classList.add('hidden');
+        return;
     }
 
     // ---- 2) Шахты и склады: заголовок, уровень ----
-    const names = { gold:'Золотая', wood:'Лесная', stone:'Каменная', cristal:'Кристалльная' };
-    const kinds = { mine:'шахта', storage:'склад' };
+    const names = { gold: 'Золотая', wood: 'Лесная', stone: 'Каменная', cristal: 'Кристалльная' };
+    const kinds = { mine: 'шахта', storage: 'склад' };
     titleEl.textContent = `${names[b.type]} ${kinds[b.kind]}`;
     levelEl.textContent = `Уровень: ${b.level}`;
 
     // ---- буфер или текущее хранение ----
     if (b.kind === 'mine') {
-      bufferEl.textContent    = `Буфер: ${formatNum(b.buffer)} / ${formatNum(b.getBufferLimit())}`;
-      collectBtn.style.display= 'inline-block';
+        bufferEl.textContent = `Буфер: ${formatNum(b.buffer)} / ${formatNum(b.getBufferLimit())}`;
+        collectBtn.style.display = 'inline-block';
 
-      // Обновляем шкалу получения ресурсов
-      const harvestBar = document.getElementById('menu-harvest-bar');
-      const harvestProgress = Math.min((Date.now() - b.lastCollect) / b.collectInterval, 1);
-      const nextHarvest = b.getHarvestAmount();
-      const timeLeft = Math.ceil((1 - harvestProgress) * b.collectInterval / 1000);
-      harvestBar.style.width = `${harvestProgress * 100}%`;
+         // Восстанавливаем видимость шкалы получения ресурсов
+        document.getElementById('menu-harvest-progress').style.display = 'block';
 
-      // Обновляем текст внутри полосы
-      const harvestProgressText = document.querySelector('#menu-harvest-progress .progress-text');
-      harvestProgressText.textContent = `${nextHarvest} через ${timeLeft} сек`;
+        // Обновляем шкалу получения ресурсов
+        const harvestBar = document.getElementById('menu-harvest-bar');
+        const harvestProgress = Math.min((Date.now() - b.lastCollect) / b.collectInterval, 1);
+        const nextHarvest = b.getHarvestAmount();
+        const timeLeft = Math.ceil((1 - harvestProgress) * b.collectInterval / 1000);
+        harvestBar.style.width = `${harvestProgress * 100}%`;
 
-      document.getElementById('menu-harvest-progress').classList.remove('hidden');
-    } else {
-      bufferEl.textContent    = `Хранение: ${formatNum(resources[b.type])} / ${formatNum(b.capacity())}`;
-      collectBtn.style.display= 'none';
-      document.getElementById('menu-harvest-progress').classList.add('hidden');
+        // Обновляем текст внутри полосы
+        const harvestProgressText = document.querySelector('#menu-harvest-progress .progress-text');
+        harvestProgressText.textContent = `${nextHarvest} через ${timeLeft} сек`;
+
+        document.getElementById('menu-harvest-progress').classList.remove('hidden');
+    } else if (b.kind === 'storage') {
+        bufferEl.textContent = `Хранение: ${formatNum(resources[b.type])} / ${formatNum(b.capacity())}`;
+        collectBtn.style.display = 'none';
+
+        // Полностью скрываем шкалу получения ресурсов для складов
+        const harvestBar = document.getElementById('menu-harvest-bar');
+        const harvestProgressText = document.querySelector('#menu-harvest-progress .progress-text');
+        harvestBar.style.width = '0%';
+        harvestProgressText.textContent = '';
+        document.getElementById('menu-harvest-progress').style.display = 'none';
     }
 
     // ---- кнопка «Ускорить» ----
     if (b.upgrading) {
-      const now = Date.now();
-      const remMs = b.upgradeDuration - (now - b.upgradeStart);
-      const remMin = Math.max(remMs / 60000, 0);
-      const cost = Math.ceil(remMin / 6);
-      speedupBtn.innerHTML = `Ускорить (<img src="assets/images/resurces_cristal.png" class="icon-cost">${cost})`;
-      speedupBtn.style.display = 'inline-block';
+        const now = Date.now();
+        const remMs = b.upgradeDuration - (now - b.upgradeStart);
+        const remMin = Math.max(remMs / 60000, 0);
+        const cost = Math.ceil(remMin / 6);
+        speedupBtn.innerHTML = `Ускорить (<img src="assets/images/resurces_cristal.png" class="icon-cost">${cost})`;
+        speedupBtn.style.display = 'inline-block';
 
-      // Показываем прогресс-бар только для текущего здания
-      const progressBar = document.getElementById('menu-progress-bar');
-      const progressPercent = Math.min(Math.floor((now - b.upgradeStart) / b.upgradeDuration * 100), 100);
-      progressBar.style.width = `${progressPercent}%`;
-      progressBar.textContent = `${progressPercent}%`;
-      document.getElementById('menu-progress').classList.remove('hidden');
+        // Показываем прогресс-бар только для текущего здания
+        const progressBar = document.getElementById('menu-progress-bar');
+        const progressPercent = Math.min(Math.floor((now - b.upgradeStart) / b.upgradeDuration * 100), 100);
+        progressBar.style.width = `${progressPercent}%`;
+        progressBar.textContent = `${progressPercent}%`;
+        document.getElementById('menu-progress').classList.remove('hidden');
     } else {
-      // Скрываем прогресс-бар, если здание не улучшается
-      speedupBtn.style.display = 'none';
-      const progressBar = document.getElementById('menu-progress-bar');
-      progressBar.style.width = '0%';
-      progressBar.textContent = '';
-      document.getElementById('menu-progress').classList.add('hidden');
+        // Скрываем прогресс-бар, если здание не улучшается
+        speedupBtn.style.display = 'none';
+        const progressBar = document.getElementById('menu-progress-bar');
+        progressBar.style.width = '0%';
+        progressBar.textContent = '';
+        document.getElementById('menu-progress').classList.add('hidden');
     }
 
     // ---- кнопка «Улучшить» всегда доступна ----
@@ -543,12 +551,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- стоимость улучшения ----
     const cost = b.getUpgradeCost();
     const parts = [];
-    if (cost.gold)    parts.push(`<img src="assets/images/resurces_gold.png"   class="icon-cost">${formatNum(cost.gold)}`);
-    if (cost.wood)    parts.push(`<img src="assets/images/resurces_wood.png"   class="icon-cost">${formatNum(cost.wood)}`);
-    if (cost.stone)   parts.push(`<img src="assets/images/resurces_stone.png"  class="icon-cost">${formatNum(cost.stone)}`);
-    if (cost.cristal) parts.push(`<img src="assets/images/resurces_cristal.png"class="icon-cost">${formatNum(cost.cristal)}`);
+    if (cost.gold) parts.push(`<img src="assets/images/resurces_gold.png"   class="icon-cost">${formatNum(cost.gold)}`);
+    if (cost.wood) parts.push(`<img src="assets/images/resurces_wood.png"   class="icon-cost">${formatNum(cost.wood)}`);
+    if (cost.stone) parts.push(`<img src="assets/images/resurces_stone.png"  class="icon-cost">${formatNum(cost.stone)}`);
+    if (cost.cristal) parts.push(`<img src="assets/images/resurces_cristал.png"class="icon-cost">${formatNum(cost.cristal)}`);
     costEl.innerHTML = 'Стоимость: ' + (parts.length ? parts.join(' ') : '—');
-  }
+}
 
   // ================================================
   //         ЦИКЛ ОТРИСОВКИ И ОБНОВЛЕНИЯ
