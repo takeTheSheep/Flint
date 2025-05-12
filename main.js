@@ -433,6 +433,20 @@ document.addEventListener('DOMContentLoaded', () => {
       selected.y = mouseY - selected.h / 2;
     }
 
+    // Проверяем, наведена ли мышь на здание
+    const hit = buildings.find(b => b.contains(mouseX, mouseY));
+    if (hit) {
+        const buildingName = hit.kind === 'storage' 
+            ? storageNames[hit.type] // Используем отдельные названия для хранилищ
+            : names[hit.type];       // Используем стандартные названия для шахт и других зданий
+        tooltip.textContent = buildingName;
+        tooltip.style.left = `${e.pageX + 10}px`;
+        tooltip.style.top = `${e.pageY + 10}px`;
+        tooltip.style.display = 'block';
+    } else {
+        tooltip.style.display = 'none';
+    }
+
     // Курсор меняется: move при перемещении, pointer при наведении, default иначе
     canvas.style.cursor = moving
       ? 'move'
@@ -462,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ================================================
   //   ФУНКЦИЯ openMenu — заполняет и показывает меню
   // ================================================
-  function openMenu(b) {
+ function openMenu(b) {
     selected = b;
     menuImg.src = b.img.src;
     menu.classList.remove('hidden');
@@ -484,9 +498,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---- 2) Шахты и склады: заголовок, уровень ----
-    const names = { gold: 'Золотая', wood: 'Лесная', stone: 'Каменная', cristal: 'Кристалльная' };
-    const kinds = { mine: 'шахта', storage: 'склад' };
-    titleEl.textContent = `${names[b.type]} ${kinds[b.kind]}`;
+    if (b.kind === 'storage') {
+        titleEl.textContent = storageNames[b.type];
+    } else {
+        titleEl.textContent = names[b.type];
+    }
     levelEl.textContent = `Уровень: ${b.level}`;
 
     // ---- буфер или текущее хранение ----
@@ -494,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bufferEl.textContent = `Буфер: ${formatNum(b.buffer)} / ${formatNum(b.getBufferLimit())}`;
         collectBtn.style.display = 'inline-block';
 
-         // Восстанавливаем видимость шкалы получения ресурсов
+        // Восстанавливаем видимость шкалы получения ресурсов
         document.getElementById('menu-harvest-progress').style.display = 'block';
 
         // Обновляем шкалу получения ресурсов
@@ -558,6 +574,71 @@ document.addEventListener('DOMContentLoaded', () => {
     costEl.innerHTML = 'Стоимость: ' + (parts.length ? parts.join(' ') : '—');
 }
 
+// Создаем элемент для подсказки
+const tooltip = document.createElement('div');
+tooltip.id = 'tooltip';
+tooltip.style.position = 'absolute';
+tooltip.style.background = 'rgba(0, 0, 0, 0.7)';
+tooltip.style.color = 'white';
+tooltip.style.padding = '5px 10px';
+tooltip.style.borderRadius = '5px';
+tooltip.style.pointerEvents = 'none';
+tooltip.style.display = 'none';
+document.body.appendChild(tooltip);
+
+// Обновленные названия зданий
+const names = { 
+    gold: 'Золотая шахта', 
+    wood: 'Лесопилка', 
+    stone: 'Камнеломня', 
+    cristal: 'Кристальная шахта',
+    tavern: 'Таверна',
+    beast_tavern: 'Таверна для животных'
+};
+const storageNames = { 
+    gold: 'Хранилище золота', 
+    wood: 'Хранилище дерева', 
+    stone: 'Хранилище камня', 
+    cristal: 'Хранилище кристаллов' 
+};
+
+// Обновляем обработчик mousemove для отображения подсказки
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+
+    if (moving && selected) {
+        // Центрируем постройку под курсор
+        selected.x = mouseX - selected.w / 2;
+        selected.y = mouseY - selected.h / 2;
+    }
+
+    // Проверяем, наведена ли мышь на здание
+    const hit = buildings.find(b => b.contains(mouseX, mouseY));
+    if (hit) {
+        const buildingName = hit.kind === 'storage' 
+            ? storageNames[hit.type] // Используем отдельные названия для хранилищ
+            : names[hit.type];       // Используем стандартные названия для шахт и других зданий
+        tooltip.textContent = buildingName;
+        tooltip.style.left = `${e.pageX + 10}px`;
+        tooltip.style.top = `${e.pageY + 10}px`;
+        tooltip.style.display = 'block';
+    } else {
+        tooltip.style.display = 'none';
+    }
+
+    // Курсор меняется: move при перемещении, pointer при наведении, default иначе
+    canvas.style.cursor = moving
+        ? 'move'
+        : (buildings.some(b => b.contains(mouseX, mouseY)) ? 'pointer' : 'default');
+});
+
+// Скрываем подсказку при выходе мыши с canvas
+canvas.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+});
+
   // ================================================
   //         ЦИКЛ ОТРИСОВКИ И ОБНОВЛЕНИЯ
   // ================================================
@@ -576,4 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
       requestAnimationFrame(loop);
     })();
   };
+
+  // Скрываем подсказку при выходе мыши с canvas
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
 });
