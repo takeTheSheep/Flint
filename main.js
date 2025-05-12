@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //                 ЗАГРУЗКА ФОНА
   // ================================================
   const bg = new Image();
-  bg.src = 'assets/images/island.png';
+  bg.src = 'assets/images/background/island.png';
 
   // ================================================
   //               ХРАНИЛИЩЕ ДАННЫХ
@@ -299,8 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         kind: 'mine',
         type,
-        img:      `assets/images/mine_${type}.png`,
-        imgClick: `assets/images/mine_${type}_click.png`
+        img:      `assets/images/objects/mine_${type}.png`,
+        imgClick: `assets/images/objects/mine_${type}_click.png`
       }
     ));
     // склад
@@ -309,8 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         kind: 'storage',
         type,
-        img:      `assets/images/${type}Storage.png`,
-        imgClick: `assets/images/${type}Storage_click.png`
+        img:      `assets/images/objects/${type}Storage.png`,
+        imgClick: `assets/images/objects/${type}Storage_click.png`
       }
     ));
   });
@@ -318,14 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
   buildings.push(new Building(50, 250, {
     kind:     'tavern',
     type:     'tavern',
-    img:      'assets/images/tavern.png',
-    imgClick: 'assets/images/tavern_click.png'
+    img:      'assets/images/objects/tavern.png',
+    imgClick: 'assets/images/objects/tavern_click.png'
   }));
   buildings.push(new Building(300, 250, {
     kind:     'beast_tavern',
     type:     'beast_tavern',
-    img:      'assets/images/beast_tavern.png',
-    imgClick: 'assets/images/beast_tavern_click.png'
+    img:      'assets/images/objects/beast_tavern.png',
+    imgClick: 'assets/images/objects/beast_tavern_click.png'
   }));
 
   // Карта складов для проверки capacity
