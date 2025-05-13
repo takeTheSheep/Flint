@@ -156,12 +156,29 @@ body {
 
 #menu-harvest-progress {
   position: relative;
+  width: 100%;
+  height: 20px;
+  background-color: #bbb6b6; /* Серый фон */
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 #menu-harvest-bar {
-  width: 0%;
   height: 100%;
-  background: #006400; /* Темно-зеленый цвет */
+  background-color: #df9536; /* Светло-коричневый цвет */
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: bold;
+  color: #000;
+  pointer-events: none;
 }
 
 #menu-harvest-progress .progress-text {
@@ -173,7 +190,7 @@ body {
   text-align: center;
   line-height: 20px;
   font-size: 14px;
-  color: #fff;
+  color: #000000;
   pointer-events: none; /* Чтобы текст не мешал кликам */
 }
 
