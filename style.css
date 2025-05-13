@@ -161,14 +161,17 @@ body {
   background-color: #bbb6b6; /* Серый фон */
   border-radius: 5px;
   overflow: hidden;
+  display: block;
 }
 
 #menu-harvest-bar {
   height: 100%;
   background-color: #df9536; /* Светло-коричневый цвет */
   width: 0;
-  transition: width 0.3s ease;
+   transition: none !important; /* Отключаем анимацию */
 }
+
+
 
 .progress-text {
   position: absolute;
@@ -208,4 +211,99 @@ body {
   width: 100vw;
   height: 100vh;
   display: block;
+}
+
+#pirates-menu {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.95);
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+  z-index: 12;
+  width: 750px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+#pirates-menu-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+#pirates-menu-close:hover {
+  content: url('assets/images/cosmetics/crossMeny_click.png');
+}
+
+#pirates-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px; /* Отступ сверху */
+}
+
+#pirates-list {
+  display: flex;
+  overflow-x: auto;
+  gap: 16px;
+  padding: 8px;
+}
+
+#pirates-list img {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid transparent;
+}
+
+#pirates-list img:hover {
+  border-color: #fff;
+}
+
+#pirate-details {
+  display: flex;
+  margin-bottom: 16px; /* Отступ снизу */
+}
+
+#pirate-image {
+  width: 150px;
+  height: 150px;
+  margin-right: 16px;
+}
+
+#pirate-info {
+  color: #fff;
+}
+
+#pirate-info h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+#pirate-info p {
+  margin: 8px 0;
+}
+
+#hire-btn {
+  padding: 10px 20px;
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#hire-btn:hover {
+  background: #555;
+}
+
+.hidden {
+  display: none !important;
 }

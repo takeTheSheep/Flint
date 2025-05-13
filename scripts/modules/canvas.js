@@ -26,37 +26,33 @@ export function startLoop() {
       buildings.forEach(b => b.draw(ctx, mouseX, mouseY, selected));
       buildings.forEach(b => b.update());
 
-      // Обновляем шкалу уровня в реальном времени, если меню открыто
       if (selected && selected.upgrading) {
         const now = Date.now();
         const prog = (now - selected.upgradeStart) / selected.upgradeDuration;
-        const pbar = document.getElementById('menu-progress-bar');
         const menuProgress = document.getElementById('menu-progress');
+        const pbar = document.getElementById('menu-progress-bar');
+        const speedupBtn = document.getElementById('speedup-btn');
 
+        // Show upgrade progress bar
         if (menuProgress) {
-          menuProgress.style.display = 'block';
+          menuProgress.classList.remove('hidden');
           pbar.style.width = `${Math.min(Math.floor(prog * 100), 100)}%`;
           pbar.textContent = `${Math.min(Math.floor(prog * 100), 100)}%`;
         }
 
-        // Скрываем шкалу и кнопку, если улучшение завершено
-       if (prog >= 1) {
-       selected.finishUpgrade();
-      }
-
-        // Обновляем кнопку "Ускорить"
-        const speedupBtn = document.getElementById('speedup-btn');
+        // Show speedup button
         if (speedupBtn) {
           const rem = selected.upgradeDuration - (now - selected.upgradeStart);
-          const cost = Math.ceil(rem / 60000 / 6); // Стоимость ускорения
+          const cost = Math.ceil(rem / 60000 / 6);
           speedupBtn.style.display = 'inline-block';
           speedupBtn.innerHTML = `Ускорить (<img src="assets/images/resurces/resurces_cristal.png" class="icon-cost">${cost})`;
+        }
 
-          // Скрываем кнопку и шкалу, если улучшение завершено
-          if (prog >= 1) {
-            menuProgress.style.display = 'none';
-            speedupBtn.style.display = 'none';
-          }
+        // If complete, finish upgrade
+        if (prog >= 1) {
+          selected.finishUpgrade();
+          if (menuProgress) menuProgress.classList.add('hidden');
+          if (speedupBtn) speedupBtn.style.display = 'none';
         }
       }
 

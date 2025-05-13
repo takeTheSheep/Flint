@@ -17,7 +17,12 @@ export class Building {
     this.collectInterval = type === 'cristal' ? 120000 : 5000;
     this.lastCollect = Date.now();
     this.upgrading = false; this.upgradeStart = 0; this.upgradeDuration = 0;
+    
   }
+getAvailablePirates() {
+    return pirates.filter(pirate => pirate.unlockLevel <= this.level);
+  }
+  
 
   contains(mx, my) {
     return mx >= this.x && mx <= this.x + this.w &&
@@ -61,6 +66,14 @@ export class Building {
 
   getUpgradeCost() {
     const lvl = this.level;
+    if (this.kind === 'tavern' || this.kind === 'beast_tavern') {
+      if (lvl >= 10) return { gold: 0, wood: 0, stone: 0, cristal: 0 }; // Максимальный уровень
+      const baseCost = 10000;
+      const multiplier = lvl === 1 ? 1 : Math.pow(2, lvl - 1);
+      const cost = baseCost * multiplier;
+      return { gold: cost, wood: cost, stone: cost, cristal: 0 };
+    }
+
     const base = Math.pow(lvl, 3) * 1000;
     const g = Math.floor(base), w = Math.floor(base * 0.9), s = Math.floor(base * 0.5);
     let goldC = 0, woodC = 0, stoneC = 0, cristalC = 0;
@@ -96,26 +109,30 @@ export class Building {
   startUpgrade() {
     const cost = this.getUpgradeCost();
     const missing = [];
-    ['gold','wood','stone','cristal'].forEach(r => {
+    ['gold', 'wood', 'stone', 'cristal'].forEach(r => {
       if (resources[r] < cost[r]) missing.push(`${cost[r] - resources[r]} ${r}`);
     });
     if (missing.length) return alert('Не хватает: ' + missing.join(', '));
-    ['gold','wood','stone','cristal'].forEach(r => resources[r] -= cost[r]);
+    ['gold', 'wood', 'stone', 'cristal'].forEach(r => resources[r] -= cost[r]);
 
-    // Обновляем интерфейс ресурсов
     updateResourcesUI();
 
-    this.upgrading = true; 
+    this.upgrading = true;
     this.upgradeStart = Date.now();
-    const durations = this.type === 'cristal'
-      ? [10,30,60,120,180,240,360,480,600]
-      : [1,15,30,60,90,120,180,240,300];
+    const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300]; // Время улучшения в минутах
     this.upgradeDuration = durations[this.level - 1] * 60000;
   }
 
   finishUpgrade() {
-    this.level++;
+    if (this.level < 10) this.level++;
     this.upgrading = false;
+
+    if (selected === this) {
+      const menuProgress = document.getElementById('menu-progress');
+      const speedupBtn = document.getElementById('speedup-btn');
+      if (menuProgress) menuProgress.style.display = 'none';
+      if (speedupBtn) speedupBtn.style.display = 'none';
+    }
 
     // Скрываем шкалу улучшения и кнопку "Ускорить", если здание выбрано
   if (selected === this) {
@@ -164,19 +181,16 @@ export class Building {
       const timeLeft = this.collectInterval - (now - this.lastCollect);
       const harvestProgress = ((this.collectInterval - timeLeft) / this.collectInterval) * 100;
 
-       // Отключаем анимацию при переключении шахт
-      harvestBar.style.transition = 'none';
-      harvestBar.style.width = `${Math.min(harvestProgress, 100)}%`;
-
-      // Включаем анимацию обратно для плавного заполнения
-      setTimeout(() => {
+      if (harvestBar) {
+        harvestBar.style.width = `${Math.min(harvestProgress, 100)}%`;
         harvestBar.style.transition = 'width 0.3s ease';
-      }, 0);
+      }
 
       
 
-      // Устанавливаем текст по центру шкалы
-      progressText.textContent = `${Math.floor(this.getHarvestAmount())} / ${Math.ceil(timeLeft / 1000)}с`;
+     if (progressText) {
+  progressText.textContent = `${Math.floor(this.getHarvestAmount())} / ${Math.ceil(timeLeft / 1000)}с`;
+}
     }
   
   

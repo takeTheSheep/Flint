@@ -7,6 +7,7 @@ import {
   collectBtn, upgradeBtn, speedupBtn, moveBtn, tooltip
 } from './ui.js';
 import { names, storageNames } from './utils.js';
+import { openPiratesMenu, closePiratesMenu } from './ui.js';
 
 export let mouseX = 0, mouseY = 0, selected = null, moving = false;
 
@@ -63,6 +64,11 @@ export function initEvents() {
       selected = null;
       closeMenu();
     }
+    if (selected?.kind === 'tavern') {
+    openPiratesMenu(selected.level); // Открываем меню только при клике на таверну
+  } else {
+    closePiratesMenu(); // Закрываем меню, если клик не по таверне
+  }
   });
 
   collectBtn.addEventListener('click', () => {
