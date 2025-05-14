@@ -394,3 +394,41 @@ body {
 #pirate-details.hidden {
   display: none; /* Полностью скрываем детали пирата */
 }
+
+
+
+
+
+/* Делаем неактивной кнопку нанять */
+#hire-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Обёртка для портрета */
+.pirate-item {
+  position: relative;
+  display: inline-block;
+}
+
+/* Затемняем сам портрет и поднимаем его над фоном */
+.pirate-item.locked img {
+  filter: brightness(40%);
+  position: relative;
+  z-index: 1;  /* портрет под иконкой */
+}
+
+/* Рисуем поверх иконку замка */
+.pirate-item.locked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  background: url('assets/images/cosmetics/lock.png') no-repeat center center;
+  background-size: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;  /* иконка поверх всего */
+}

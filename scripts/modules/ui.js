@@ -1,4 +1,3 @@
-// ui.js
 import { formatNum, names, storageNames } from './utils.js';
 import { resources } from './buildings.js';
 import { pirates } from './pirates.js';
@@ -26,45 +25,51 @@ const pirateStats = document.getElementById('pirate-stats');
 const pirateCost = document.getElementById('pirate-cost');
 const hireBtn = document.getElementById('hire-btn');
 
+let currentTavernLevel = 0;
+
 export function openPiratesMenu(tavernLevel) {
-  //piratesMenu.classList.remove('hidden');
-  pirateDetails.classList.add('hidden'); // Скрываем детали пирата при открытии меню
-  piratesList.innerHTML = ''; // Очищаем список пиратов
-  piratesMenu.classList.add('hidden'); 
-  // Добавляем пиратов в список
-  pirates
-    .filter(p => p.unlockLevel <= tavernLevel)
-    .forEach(pirate => {
-      const img = document.createElement('img');
-      img.src = pirate.portrait;
-      img.alt = pirate.name;
+  // Сохраняем текущий уровень таверны и наполняем список
+  currentTavernLevel = tavernLevel;
+  pirateDetails.classList.add('hidden');
+  piratesList.innerHTML = '';
 
-      // Добавляем обработчик для отображения деталей пирата
-      img.addEventListener('click', () => {
-        showPirateDetails(pirate);
-      });
+  pirates.forEach(pirate => {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('pirate-item');
 
-      piratesList.appendChild(img);
+    // Если пират ещё не доступен — затемняем и ставим замок
+    if (pirate.unlockLevel > tavernLevel) {
+      wrapper.classList.add('locked');
+    }
+
+    const img = document.createElement('img');
+    img.src = pirate.portrait;
+    img.alt = pirate.name;
+    wrapper.appendChild(img);
+
+    // Всегда открываем детали (даже заблокированных)
+    wrapper.addEventListener('click', () => {
+      showPirateDetails(pirate);
     });
+
+    piratesList.appendChild(wrapper);
+  });
 }
 
 export function closePiratesMenu() {
-  piratesMenu.classList.add('hidden'); // Скрываем меню пирата
-  pirateDetails.classList.add('hidden'); // Скрываем детали пирата
+  piratesMenu.classList.add('hidden');
+  pirateDetails.classList.add('hidden');
 
-  // Сбрасываем содержимое деталей пирата
   pirateImage.src = '';
   pirateName.textContent = '';
   pirateDescription.textContent = '';
   pirateStats.textContent = '';
   pirateCost.textContent = '';
-  hireBtn.onclick = null; // Убираем обработчик события
+  hireBtn.onclick = null;
 }
 
-// Добавляем обработчик события для закрытия меню
 piratesMenuClose.addEventListener('click', () => {
-  piratesMenu.classList.add('hidden'); // Скрываем меню пирата
-  pirateDetails.classList.add('hidden'); // Скрываем детали пирата
+  closePiratesMenu();
 });
 
 carouselLeft.addEventListener('click', () => {
@@ -75,42 +80,48 @@ carouselRight.addEventListener('click', () => {
   piratesList.scrollBy({ left: 100, behavior: 'smooth' });
 });
 
-
 function showPirateDetails(pirate) {
- piratesMenu.classList.remove('hidden');
- // если меню было скрыто крестиком — открываем его
- piratesMenu.classList.remove('hidden');
+  // Показываем меню и детали
+  piratesMenu.classList.remove('hidden');
   pirateDetails.classList.remove('hidden');
 
-  // Заменяем "_portret" на пустую строку для меню пирата
+  // Подготавливаем путь к "большому" изображению
   const pirateImagePath = pirate.portrait.replace('_portret', '');
+  pirateImage.src = pirateImagePath;
 
-  pirateImage.src = pirateImagePath; // Устанавливаем путь к изображению без "_portret"
+  // Наполняем информацию
   pirateName.textContent = pirate.name;
   pirateDescription.textContent = pirate.description;
   pirateStats.textContent = `Атака: ${pirate.stats.attack}, Защита: ${pirate.stats.defense}, Скорость: ${pirate.stats.speed}, Здоровье: ${pirate.stats.health}`;
   pirateCost.textContent = `Стоимость: Золото: ${pirate.cost.gold}, Дерево: ${pirate.cost.wood}, Камень: ${pirate.cost.stone}`;
-  hireBtn.onclick = () => hirePirate(pirate);
+
+  // Если пират заблокирован — делаем кнопку недоступной
+  if (pirate.unlockLevel > currentTavernLevel) {
+    hireBtn.disabled = true;
+    hireBtn.textContent = 'Недоступно';
+    hireBtn.onclick = null;
+  } else {
+    hireBtn.disabled = false;
+    hireBtn.textContent = 'Нанять';
+    hireBtn.onclick = () => hirePirate(pirate);
+  }
 }
 
 function hirePirate(pirate) {
   const { gold, wood, stone } = pirate.cost;
- // Считаем недостачи
-const missing = [];
-if (resources.gold  < gold ) missing.push(`золота ${gold  - resources.gold}`);
-if (resources.wood  < wood ) missing.push(`дерева ${wood  - resources.wood}`);
-if (resources.stone < stone) missing.push(`камня ${stone - resources.stone}`);
+  const missing = [];
+  if (resources.gold < gold) missing.push(`золота ${gold - resources.gold}`);
+  if (resources.wood < wood) missing.push(`дерева ${wood - resources.wood}`);
+  if (resources.stone < stone) missing.push(`камня ${stone - resources.stone}`);
 
-if (missing.length === 0) {
-// Достаточно ресурсов — списываем их и обновляем UI
-resources.gold  -= gold;
-resources.wood  -= wood;
-resources.stone -= stone;
-    updateResourcesUI();  // ← не забудьте импортировать функцию из ui.js :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
-  alert(`${pirate.name} нанят!`);
-} else {
- // Выводим список того, чего не хватает
-  alert(`Недостаточно ресурсов! Не хватает: ${missing.join(', ')}.`);
+  if (missing.length === 0) {
+    resources.gold -= gold;
+    resources.wood -= wood;
+    resources.stone -= stone;
+    updateResourcesUI();
+    alert(`${pirate.name} нанят!`);
+  } else {
+    alert(`Недостаточно ресурсов! Не хватает: ${missing.join(', ')}.`);
   }
 }
 
@@ -149,23 +160,17 @@ function updateHarvestProgress(building) {
   const harvestBar = document.getElementById('menu-harvest-bar');
   const progressText = document.querySelector('#menu-harvest-progress .progress-text');
   const now = Date.now();
-  const elapsed = now - building.lastCollect; // Время, прошедшее с последнего сбора
-  const total = building.collectInterval; // Полное время сбора
-
+  const elapsed = now - building.lastCollect;
+  const total = building.collectInterval;
+  const progress = Math.min(elapsed / total, 1);
   if (harvestBar && progressText) {
-    // Рассчитываем прогресс
-    const progress = Math.min(elapsed / total, 1); // Прогресс в процентах
-
-    // Убираем анимацию временно
-    harvestBar.style.transition = 'none'; // Отключаем анимацию
+    harvestBar.style.transition = 'none';
     harvestBar.style.width = `${progress * 100}%`;
     progressText.textContent = `${Math.floor(elapsed / 1000)} / ${Math.ceil(total / 1000)}с`;
-
-    // Если сбор завершен, сбрасываем шкалу моментально
     if (progress >= 1) {
-      building.lastCollect = now; // Обновляем время последнего сбора
-      harvestBar.style.transition = 'none'; // Отключаем анимацию
-      harvestBar.style.width = '0%'; // Сбрасываем ширину шкалы моментально
+      building.lastCollect = now;
+      harvestBar.style.transition = 'none';
+      harvestBar.style.width = '0%';
       progressText.textContent = `0 / ${Math.ceil(total / 1000)}с`;
     }
   }
@@ -179,22 +184,20 @@ export function openMenu(b) {
   titleEl.textContent = b.kind === 'storage' ? storageNames[b.type] : names[b.type];
   levelEl.textContent = `Уровень: ${b.level}`;
 
-  // Скрываем все прогресс-бары
   document.getElementById('menu-harvest-progress').classList.add('hidden');
   document.getElementById('menu-progress').classList.add('hidden');
 
   const piratesCarousel = document.getElementById('pirates-carousel');
   const piratesMenu = document.getElementById('pirates-menu');
 
-  // Показываем прокрутку пиратов только для таверны
   if (b.kind === 'tavern') {
-    piratesCarousel.classList.remove('hidden'); // Показываем карусель
-    piratesMenu.classList.add('hidden'); // Скрываем меню пиратов при открытии таверны
-    pirateDetails.classList.add('hidden'); // Скрываем детали пирата
-    openPiratesMenu(b.level); // Открываем меню пиратов с учётом уровня таверны
+    piratesCarousel.classList.remove('hidden');
+    piratesMenu.classList.add('hidden');
+    pirateDetails.classList.add('hidden');
+    openPiratesMenu(b.level);
   } else {
-    piratesCarousel.classList.add('hidden'); // Скрываем карусель для других зданий
-    piratesList.innerHTML = ''; // Очищаем список пиратов
+    piratesCarousel.classList.add('hidden');
+    piratesList.innerHTML = '';
   }
 
   if (b.kind === 'tavern' || b.kind === 'beast_tavern') {
@@ -231,22 +234,14 @@ export function openMenu(b) {
     bufferEl.textContent = `Буфер: ${formatNum(b.buffer)} / ${formatNum(b.getBufferLimit())}`;
     collectBtn.style.display = 'inline-block';
     document.getElementById('menu-harvest-progress').classList.remove('hidden');
-
-
-// Сбрасываем шкалу перед обновлением
     const harvestBar = document.getElementById('menu-harvest-bar');
     const progressText = document.querySelector('#menu-harvest-progress .progress-text');
     if (harvestBar) {
-      harvestBar.style.transition = 'none'; // Убираем анимацию
-      harvestBar.style.width = '0%'; // Сбрасываем ширину шкалы
+      harvestBar.style.transition = 'none';
+      harvestBar.style.width = '0%';
+      progressText.textContent = `0 / ${Math.ceil(b.collectInterval / 1000)}с`;
     }
-    if (progressText) {
-      progressText.textContent = `0 / ${Math.ceil(b.collectInterval / 1000)}с`; // Сбрасываем текст прогресса
-    }
-
-    // Обновляем шкалу прогресса
     updateHarvestProgress(b);
-
   } else {
     bufferEl.textContent = `Хранение: ${formatNum(resources[b.type])} / ${formatNum(b.capacity())}`;
     collectBtn.style.display = 'none';
@@ -270,36 +265,24 @@ export function openMenu(b) {
   }
 
   upgradeBtn.style.display = 'inline-block';
-  const uc = b.getUpgradeCost();
-  const parts = [];
-  if (uc.gold) parts.push(`<img src="assets/images/resurces/resurces_gold.png" class="icon-cost">${formatNum(uc.gold)}`);
-  if (uc.wood) parts.push(`<img src="assets/images/resurces/resurces_wood.png" class="icon-cost">${formatNum(uc.wood)}`);
-  if (uc.stone) parts.push(`<img src="assets/images/resurces/resurces_stone.png" class="icon-cost">${formatNum(uc.stone)}`);
-  if (uc.cristal) parts.push(`<img src="assets/images/resurces/resurces_cristal.png" class="icon-cost">${formatNum(uc.cristal)}`);
-  costEl.innerHTML = 'Стоимость: ' + (parts.length ? parts.join(' ') : '—');
+  const ucFinal = b.getUpgradeCost();
+  const finalParts = [];
+  if (ucFinal.gold) finalParts.push(`<img src="assets/images/resurces/resurces_gold.png" class="icon-cost">${formatNum(ucFinal.gold)}`);
+  if (ucFinal.wood) finalParts.push(`<img src="assets/images/resurcs/resurces_wood.png" class="icon-cost">${formatNum(ucFinal.wood)}`);
+  if (ucFinal.stone) finalParts.push(`<img src="assets/images/resurces/resurces_stone.png" class="icon-cost">${formatNum(ucFinal.stone)}`);
+  if (ucFinal.cristal) finalParts.push(`<img src="assets/images/resurces/resurces_cristal.png" class="icon-cost">${formatNum(ucFinal.cristal)}`);
+  costEl.innerHTML = 'Стоимость: ' + (finalParts.length ? finalParts.join(' ') : '—');
 }
 
 export function closeMenu() {
   menu.classList.add('hidden');
   document.getElementById('menu-harvest-progress').classList.add('hidden');
   document.getElementById('menu-progress').classList.add('hidden');
-
-  // Скрываем шкалу прогресса
-  const harvestBar = document.getElementById('menu-harvest-bar');
-  const progressText = document.querySelector('#menu-harvest-progress .progress-text');
-  if (harvestBar) harvestBar.style.width = '0%';
-  if (progressText) progressText.textContent = '';
-
-  // Используем функцию для сброса состояния вместо изменения модуля
   import('./events.js').then(events => {
     if (typeof events.resetSelected === 'function') {
-      events.resetSelected(); // Вызываем функцию для сброса состояния
-    } else {
-      console.warn('resetSelected function is not defined in events.js');
+      events.resetSelected();
     }
   });
-
-  // Закрываем меню пиратов вместе с меню таверны
   closePiratesMenu();
 }
 
