@@ -184,8 +184,8 @@ export function openMenu(b) {
   titleEl.textContent = b.kind === 'storage' ? storageNames[b.type] : names[b.type];
   levelEl.textContent = `Уровень: ${b.level}`;
 
-  document.getElementById('menu-harvest-progress').classList.add('hidden');
-  document.getElementById('menu-progress').classList.add('hidden');
+ document.getElementById('menu-harvest-progress').classList.add('hidden');
+ document.getElementById('menu-progress').classList.add('hidden');
 
   const piratesCarousel = document.getElementById('pirates-carousel');
   const piratesMenu = document.getElementById('pirates-menu');
@@ -211,14 +211,17 @@ export function openMenu(b) {
       const cost = Math.ceil(rem / 60000 / 6);
       speedupBtn.innerHTML = `Ускорить (<img src="assets/images/resurces/resurces_cristal.png" class="icon-cost">${cost})`;
 
+      // показываем апгрейд-бар, только если реально апгрейдим
       const upgradeProgressEl = document.getElementById('menu-progress');
       upgradeProgressEl.classList.remove('hidden');
+
       const prog = (now - b.upgradeStart) / b.upgradeDuration;
       const pbar = document.getElementById('menu-progress-bar');
       pbar.style.width = `${Math.min(Math.floor(prog * 100), 100)}%`;
       pbar.textContent = `${Math.min(Math.floor(prog * 100), 100)}%`;
     } else {
       speedupBtn.style.display = 'none';
+      
     }
     upgradeBtn.style.display = 'inline-block';
     const uc = b.getUpgradeCost();
@@ -268,7 +271,7 @@ export function openMenu(b) {
   const ucFinal = b.getUpgradeCost();
   const finalParts = [];
   if (ucFinal.gold) finalParts.push(`<img src="assets/images/resurces/resurces_gold.png" class="icon-cost">${formatNum(ucFinal.gold)}`);
-  if (ucFinal.wood) finalParts.push(`<img src="assets/images/resurcs/resurces_wood.png" class="icon-cost">${formatNum(ucFinal.wood)}`);
+  if (ucFinal.wood) finalParts.push(`<img src="assets/images/resurces/resurces_wood.png" class="icon-cost">${formatNum(ucFinal.wood)}`);
   if (ucFinal.stone) finalParts.push(`<img src="assets/images/resurces/resurces_stone.png" class="icon-cost">${formatNum(ucFinal.stone)}`);
   if (ucFinal.cristal) finalParts.push(`<img src="assets/images/resurces/resurces_cristal.png" class="icon-cost">${formatNum(ucFinal.cristal)}`);
   costEl.innerHTML = 'Стоимость: ' + (finalParts.length ? finalParts.join(' ') : '—');

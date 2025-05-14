@@ -1,7 +1,7 @@
 // buildings.js
 import { formatNum } from './utils.js';
 import { mouseX, mouseY, selected } from './events.js';
-import { updateResourcesUI } from './ui.js';
+import { updateResourcesUI, openPiratesMenu } from './ui.js';
 
 export const resources = { gold: 0, wood: 0, stone: 0, cristal: 0 };
 export const buffers = { gold: 0, wood: 0, stone: 0, cristal: 0 };
@@ -37,15 +37,15 @@ getAvailablePirates() {
     const lvl = this.level;
     if (this.type === 'gold') {
       const step = (2500 - 200) / 9;
-      return Math.floor(200 + (lvl - 1) * step);
+      return Math.floor(2000 + (lvl - 1) * step);
     }
     if (this.type === 'wood') {
       const step = (2000 - 150) / 9;
-      return Math.floor(150 + (lvl - 1) * step);
+      return Math.floor(2000 + (lvl - 1) * step);
     }
     if (this.type === 'stone') {
       const step = (1500 - 100) / 9;
-      return Math.floor(100 + (lvl - 1) * step);
+      return Math.floor(2000 + (lvl - 1) * step);
     }
     return 0;
   }
@@ -119,40 +119,49 @@ getAvailablePirates() {
 
     this.upgrading = true;
     this.upgradeStart = Date.now();
+    // очищаем возможный inline-style
+  const menuProgress = document.getElementById('menu-progress');
+  if (menuProgress) menuProgress.style.removeProperty('display');
     const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300]; // Время улучшения в минутах
     this.upgradeDuration = durations[this.level - 1] * 60000;
   }
 
   finishUpgrade() {
-    if (this.level < 10) this.level++;
-    this.upgrading = false;
+  if (this.level < 10) this.level++;
+  this.upgrading = false;
 
-    if (selected === this) {
-      const menuProgress = document.getElementById('menu-progress');
-      const speedupBtn = document.getElementById('speedup-btn');
-      if (menuProgress) menuProgress.style.display = 'none';
-      if (speedupBtn) speedupBtn.style.display = 'none';
-    }
-
-    // Скрываем шкалу улучшения и кнопку "Ускорить", если здание выбрано
+  // Если в этот момент открыто меню этого здания —
+  // обновляем все элементы сразу и, для таверны, перестраиваем карусель пиратов.
   if (selected === this) {
+    // 1) Текст уровня
+    const levelEl = document.getElementById('menu-level');
+    if (levelEl) levelEl.textContent = `Уровень: ${this.level}`;
+
+    // 2) Скрыть полосу прогресса через класс .hidden
     const menuProgress = document.getElementById('menu-progress');
+    if (menuProgress) menuProgress.classList.add('hidden');
+
+    // 3) Скрыть кнопку «Ускорить» обычным display
     const speedupBtn = document.getElementById('speedup-btn');
-    if (menuProgress) menuProgress.style.display = 'none';
     if (speedupBtn) speedupBtn.style.display = 'none';
+
+    // 4) Особенность таверны: сразу перестроить список пиратов
+    if (this.kind === 'tavern') {
+      // level — текущий уровень таверны
+      openPiratesMenu(this.level);
+    }
   }
 
-  // Обновляем буфер в зависимости от типа здания
-    const bufferEl = document.getElementById('menu-buffer');
-    if (bufferEl) {
-      if (this.kind === 'storage') {
-        bufferEl.textContent = `Хранение: ${formatNum(resources[this.type])} / ${formatNum(this.capacity())}`;
-      } else if (this.kind === 'mine') {
-        bufferEl.textContent = `Буфер: ${formatNum(this.buffer)} / ${formatNum(this.getBufferLimit())}`;
-      }
+  // Обновляем «буфер» или «хранение» как было у вас
+  const bufferEl = document.getElementById('menu-buffer');
+  if (bufferEl) {
+    if (this.kind === 'storage') {
+      bufferEl.textContent = `Хранение: ${formatNum(resources[this.type])} / ${formatNum(this.capacity())}`;
+    } else if (this.kind === 'mine') {
+      bufferEl.textContent = `Буфер: ${formatNum(this.buffer)} / ${formatNum(this.getBufferLimit())}`;
     }
-  
   }
+}
 
   update() {
     const now = Date.now();

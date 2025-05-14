@@ -1,6 +1,7 @@
 // canvas.js
 import { buildings } from './buildings.js';
 import { mouseX, mouseY, selected } from './events.js';
+import { openMenu } from './ui.js';
 
 export let canvas, ctx;
 const bg = new Image();
@@ -53,6 +54,8 @@ export function startLoop() {
           selected.finishUpgrade();
           if (menuProgress) menuProgress.classList.add('hidden');
           if (speedupBtn) speedupBtn.style.display = 'none';
+          // Обновляем меню, чтобы сразу подтянуть новых пиратов
+          if (selected) openMenu(selected);
         }
       }
 
