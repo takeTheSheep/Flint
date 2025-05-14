@@ -58,16 +58,18 @@ export function initEvents() {
     }
     const hit = buildings.find(b => b.contains(mouseX, mouseY));
     if (hit) {
-      selected = hit;
-      openMenu(hit);
-    } else {
-      selected = null;
-      closeMenu();
-    }
-    if (selected?.kind === 'tavern') {
-    openPiratesMenu(selected.level); // Открываем меню только при клике на таверну
+    selected = hit;
+    openMenu(hit);
   } else {
-    closePiratesMenu(); // Закрываем меню, если клик не по таверне
+    selected = null;
+    closeMenu();
+  }
+  if (selected?.kind === 'tavern') {
+    openPiratesMenu(selected.level);
+  } else if (selected?.kind === 'beast_tavern') {
+    openBeastsMenu(selected.level);
+  } else {
+    closePiratesMenu();
   }
   });
 

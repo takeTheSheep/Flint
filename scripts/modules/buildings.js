@@ -147,9 +147,11 @@ getAvailablePirates() {
 
     // 4) Особенность таверны: сразу перестроить список пиратов
     if (this.kind === 'tavern') {
-      // level — текущий уровень таверны
-      openPiratesMenu(this.level);
-    }
+  openPiratesMenu(this.level);
+  } else if (this.kind === 'beast_tavern') {
+  // сразу перестраиваем список животных
+  import('./ui.js').then(ui => ui.openBeastsMenu(this.level));
+}
   }
 
   // Обновляем «буфер» или «хранение» как было у вас

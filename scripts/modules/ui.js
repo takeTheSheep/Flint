@@ -1,6 +1,8 @@
 import { formatNum, names, storageNames } from './utils.js';
 import { resources } from './buildings.js';
 import { pirates } from './pirates.js';
+import { animals } from './animals.js';
+
 
 export const menu = document.getElementById('building-menu');
 export const collectBtn = document.getElementById('collect-btn');
@@ -67,6 +69,28 @@ export function closePiratesMenu() {
   pirateCost.textContent = '';
   hireBtn.onclick = null;
 }
+
+// аналогично openPiratesMenu, но для animals
+export function openBeastsMenu(tavernLevel) {
+  currentTavernLevel = tavernLevel;
+  pirateDetails.classList.add('hidden');
+  piratesList.innerHTML = '';
+
+  animals.forEach(animal => {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('pirate-item');
+    if (animal.unlockLevel > tavernLevel) wrapper.classList.add('locked');
+
+    const img = document.createElement('img');
+    img.src = animal.portrait;
+    img.alt = animal.name;
+    wrapper.appendChild(img);
+
+    wrapper.addEventListener('click', () => showPirateDetails(animal));
+    piratesList.appendChild(wrapper);
+  });
+}
+
 
 piratesMenuClose.addEventListener('click', () => {
   closePiratesMenu();
@@ -190,15 +214,16 @@ export function openMenu(b) {
   const piratesCarousel = document.getElementById('pirates-carousel');
   const piratesMenu = document.getElementById('pirates-menu');
 
-  if (b.kind === 'tavern') {
-    piratesCarousel.classList.remove('hidden');
-    piratesMenu.classList.add('hidden');
-    pirateDetails.classList.add('hidden');
-    openPiratesMenu(b.level);
-  } else {
-    piratesCarousel.classList.add('hidden');
-    piratesList.innerHTML = '';
-  }
+  if (b.kind === 'tavern' || b.kind === 'beast_tavern') {
+  piratesCarousel.classList.remove('hidden');
+  piratesMenu.classList.add('hidden');
+  pirateDetails.classList.add('hidden');
+  if (b.kind === 'tavern') openPiratesMenu(b.level);
+  else openBeastsMenu(b.level);
+} else {
+  piratesCarousel.classList.add('hidden');
+  piratesList.innerHTML = '';
+}
 
   if (b.kind === 'tavern' || b.kind === 'beast_tavern') {
     bufferEl.textContent = '';
