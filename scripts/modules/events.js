@@ -11,6 +11,10 @@ import { openPiratesMenu, closePiratesMenu } from './ui.js';
 
 export let mouseX = 0, mouseY = 0, selected = null, moving = false;
 
+export function resetSelected() {
+  selected = null; // Сбрасываем состояние
+}
+
 export function initEvents() {
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
