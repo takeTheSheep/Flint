@@ -5,7 +5,8 @@ import { openMenu, closeMenu, updateResourcesUI, collectBtn, upgradeBtn, speedup
 import { names, storageNames } from './utils.js';
 import { openPiratesMenu, closePiratesMenu } from './ui.js';
 
-export let mouseX = 0, mouseY = 0, selected = null, moving = false;
+export let mouseX = 0, mouseY = 0, selected = null, moving = false, moveTarget = null;
+
 
 export function resetSelected() {
   selected = null; // Сбрасываем состояние
@@ -32,10 +33,10 @@ export function initEvents() {
     const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-    if (moving && selected) {
-      selected.x = mouseX - selected.w/2;
-      selected.y = mouseY - selected.h/2;
-    }
+    if (moving && moveTarget) {
+    moveTarget.x = mouseX - moveTarget.w/2;
+    moveTarget.y = mouseY - moveTarget.h/2;
+  }
     const hit = buildings.find(b => b.contains(mouseX, mouseY));
     if (hit) {
       tooltip.textContent = hit.kind === 'storage' ? storageNames[hit.type] : names[hit.type];
@@ -50,12 +51,13 @@ export function initEvents() {
   });
 
   canvas.addEventListener('click', () => {
-    if (moving && selected) {
-      moving = false;
-      openMenu(selected);
-      moveBtn.style.display = 'none';
-      return;
-    }
+    if (moving && moveTarget) {
+    moving = false;
+    openMenu(moveTarget);           // заново открываем меню именно этого здания
+    moveBtn.style.display = 'none';
+    moveTarget = null;              // сбрасываем цель
+    return;
+  }
     const hit = buildings.find(b => b.contains(mouseX, mouseY));
     if (hit) {
     selected = hit;
@@ -108,10 +110,13 @@ export function initEvents() {
   // чтобы отобразить новый уровень и разблокированные пиратов
   openMenu(selected);
 });
+
   moveBtn.addEventListener('click', () => {
-    moving = true;
-    closeMenu();
-  });
+  if (!selected) return;
+  moving = true;
+  moveTarget = selected;   // фиксируем именно это здание
+  closeMenu();             // прячем меню, переходим в режим перемещения
+});
 
   canvas.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
