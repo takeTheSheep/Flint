@@ -224,10 +224,9 @@ body {
 /* Контейнер меню пиратов */
 #pirates-menu {
   display: flex;
-  flex-direction: column; /* Вертикальное расположение элементов */
+  flex-direction: column;
   position: absolute;
   top: 60px;
-  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(20, 20, 20, 0.95);
@@ -235,14 +234,13 @@ body {
   border-radius: 10px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
   z-index: 12;
-  width: 900px;
-  height: auto;
-  height: calc(100vh - 641px);
-  overflow-y: auto;
-  position: relative;
-  margin: 0;
-  padding: 0;
-  border: none;
+
+  /* вот эти три строки мы меняем */
+  width: 1300px;       /* увеличили ширину меню */
+  max-height: 80vh;    /* вместо фиксированного calc — ограничили высоту */
+  overflow-y: auto;    /* вертикальная прокрутка при большом контенте */
+  overflow-x: hidden;  /* отключили горизонтальный скролл */
+
   font-size: 18px;
 }
 
@@ -341,6 +339,19 @@ body {
   font-size: 18px;
 }
 
+/* разрешаем перенос строк и разрыв слов */
+#pirate-info p {
+  white-space: pre-wrap;       /* сохраняет пробелы, но переносит строки */
+  overflow-wrap: break-word;   /* разбивает очень длинные «словечки» */
+}
+
+/* Описание юнита: фиксированная высота и собственный скролл */
+#pirate-description {
+  max-height: 120px;    /* высота видимой области описания */
+  overflow-y: auto;     /* скролл, когда текста больше */
+  margin-bottom: 12px;  /* отступ до статистики */
+}
+
 #hire-btn {
  padding: 14px 28px; /* увеличиваем область кнопки */
    background: #444;
@@ -431,4 +442,39 @@ body {
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 2;  /* иконка поверх всего */
+}
+
+
+/* увеличиваем ширину панели деталей */
+#pirate-details {
+  display: flex;       /* уже есть, но на всякий случай */
+  width: 100%;         /* растягиваем на всю ширину меню */
+  max-width: none;     /* отменяем прежнюю привязку к 400px */
+  margin-bottom: 16px;
+}
+
+/* тонкий разделитель между статистикой и стоимостью */
+#pirate-info .divider {
+  border: none;
+  border-top: 1px solid #666;
+  margin: 10px 0;
+}
+
+/* заголовок "Стоимость:" */
+#pirate-info .cost-label {
+  font-weight: bold;
+  margin: 0 0 5px 0;
+}
+
+/* разрешаем перенос строк и разрыв слов */
+#pirate-info p {
+  white-space: pre-wrap;       /* сохраняет пробелы, но переносит строки */
+  overflow-wrap: break-word;   /* разбивает очень длинные «словечки» */
+}
+
+/* Тип юнита чуть меньше названия */
+#pirate-details .unit-type {
+  font-style: italic;
+  margin: 4px 0 8px;
+  color: #ccc;
 }

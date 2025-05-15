@@ -26,6 +26,12 @@ const pirateDescription = document.getElementById('pirate-description');
 const pirateStats = document.getElementById('pirate-stats');
 const pirateCost = document.getElementById('pirate-cost');
 const hireBtn = document.getElementById('hire-btn');
+const pirateStats1 = document.getElementById('pirate-stats-1');
+const pirateStats2 = document.getElementById('pirate-stats-2');
+const pirateCost1  = document.getElementById('pirate-cost-1');
+const pirateCost2  = document.getElementById('pirate-cost-2');
+const pirateType   = document.getElementById('pirate-type');
+
 
 let currentTavernLevel = 0;
 
@@ -59,14 +65,15 @@ export function openPiratesMenu(tavernLevel) {
 }
 
 export function closePiratesMenu() {
+  pirateDescription.scrollTop = 0;
   piratesMenu.classList.add('hidden');
   pirateDetails.classList.add('hidden');
 
   pirateImage.src = '';
   pirateName.textContent = '';
   pirateDescription.textContent = '';
-  pirateStats.textContent = '';
-  pirateCost.textContent = '';
+  [ pirateStats1, pirateStats2, pirateCost1, pirateCost2 ].forEach(el => el.textContent = '');
+  pirateType.textContent = '';
   hireBtn.onclick = null;
 }
 
@@ -115,9 +122,21 @@ function showPirateDetails(pirate) {
 
   // Наполняем информацию
   pirateName.textContent = pirate.name;
+  pirateType.textContent = `Тип: ${pirate.type}`;
   pirateDescription.textContent = pirate.description;
-  pirateStats.textContent = `Атака: ${pirate.stats.attack}, Защита: ${pirate.stats.defense}, Скорость: ${pirate.stats.speed}, Здоровье: ${pirate.stats.health}`;
-  pirateCost.textContent = `Стоимость: Золото: ${pirate.cost.gold}, Дерево: ${pirate.cost.wood}, Камень: ${pirate.cost.stone}`;
+  pirateDescription.scrollTop = 0;
+
+  // две строки статистики
+pirateStats1.textContent = 
+  `Здоровье: ${pirate.stats.health}    Атака: ${pirate.stats.attack}`;
+pirateStats2.textContent = 
+  `Защита:   ${pirate.stats.defense}    Скорость: ${pirate.stats.speed}`;
+
+// две строки стоимости
+pirateCost1.textContent = 
+  `Золото: ${pirate.cost.gold}    Дерево: ${pirate.cost.wood}`;
+pirateCost2.textContent = 
+  `Камень: ${pirate.cost.stone}`;
 
   // Если пират заблокирован — делаем кнопку недоступной
   if (pirate.unlockLevel > currentTavernLevel) {
