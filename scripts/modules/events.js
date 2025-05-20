@@ -1,11 +1,38 @@
-// events.js
-import { canvas } from './canvas.js';
-import { buildings, resources } from './buildings.js';
-import { openMenu, closeMenu, updateResourcesUI, collectBtn, upgradeBtn, speedupBtn, moveBtn, tooltip } from './ui.js';
-import { names, storageNames } from './utils.js';
-import { openPiratesMenu, closePiratesMenu } from './ui.js';
+// scripts/modules/events.js
+// Модуль для обработки событий в игре
+// Этот модуль содержит функции для обработки событий мыши и взаимодействия с элементами на канвасе.
+// Он также управляет состоянием выбранного здания и перемещения юнитов.
+// Импортируем необходимые модули и функции
+// из модуля «точки входа» main.js
+import { buildings} from './buildings.js';
+// из модуля «точки входа» ui.js
+import {
+  openMenu,
+  closeMenu,
+  collectBtn,
+  upgradeBtn,
+  speedupBtn,
+  moveBtn
+} from './ui.js';
+// из модуля карусели
+import {
+  openPiratesMenu,
+  openBeastsMenu,
+  closePiratesMenu
+} from './unitCarousel.js';
+import { getBuildingAt } from './hitDetection.js';
+import { endDrag} from './dragAndDrop.js';
+import { initContextMenu } from './contextMenuHandler.js';
+import { initClickHandler } from './clickHandler.js';
+import { initPointerController } from './pointerController.js';
 
-export let mouseX = 0, mouseY = 0, selected = null, moving = false, moveTarget = null;
+
+
+export let mouseX = 0, mouseY = 0, selected = null;
+
+
+
+
 
 
 export function resetSelected() {
@@ -13,59 +40,49 @@ export function resetSelected() {
 }
 
 export function initEvents() {
-  canvas.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-    const hit = buildings.find(b => b.contains(mouseX, mouseY));
-    if (hit) {
-      selected = hit;
-      openMenu(hit);
-      moveBtn.style.display = 'inline-block';
-      collectBtn.style.display = 'none';
-      upgradeBtn.style.display = 'none';
-      speedupBtn.style.display = 'none';
-    }
-  });
 
-  canvas.addEventListener('mousemove', e => {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-    if (moving && moveTarget) {
-    moveTarget.x = mouseX - moveTarget.w/2;
-    moveTarget.y = mouseY - moveTarget.h/2;
-  }
-    const hit = buildings.find(b => b.contains(mouseX, mouseY));
-    if (hit) {
-      tooltip.textContent = hit.kind === 'storage' ? storageNames[hit.type] : names[hit.type];
-      tooltip.style.left = `${e.pageX + 10}px`;
-      tooltip.style.top = `${e.pageY + 10}px`;
-      tooltip.style.display = 'block';
-      canvas.style.cursor = moving ? 'move' : 'pointer';
-    } else {
-      tooltip.style.display = 'none';
-      canvas.style.cursor = moving ? 'move' : 'default';
-    }
-  });
+ initContextMenu(({ hit, x, y }) => {
+  if (!hit) return;
+  selected = hit;
+  openMenu(hit);
 
-  canvas.addEventListener('click', () => {
-    if (moving && moveTarget) {
-    moving = false;
-    openMenu(moveTarget);           // заново открываем меню именно этого здания
-    moveBtn.style.display = 'none';
-    moveTarget = null;              // сбрасываем цель
-    return;
-  }
-    const hit = buildings.find(b => b.contains(mouseX, mouseY));
-    if (hit) {
+  // 1) Прячем всю логику таверны (детали и список пиратов)
+  closePiratesMenu();
+  const carousel = document.getElementById('pirates-carousel');
+  if (carousel) carousel.classList.add('hidden');
+
+  // 2) Прячем все поля меню «building-menu», кроме кнопки «Переместить»
+  document.getElementById('menu-buffer')         .classList.add('hidden');
+  document.getElementById('menu-cost')           .classList.add('hidden');
+  document.getElementById('menu-progress')       .classList.add('hidden');
+  document.getElementById('menu-harvest-progress').classList.add('hidden');
+  collectBtn.style.display = 'none';
+  upgradeBtn.style.display = 'none';
+  speedupBtn.style.display = 'none';
+
+  // 3) Показываем только кнопку «Переместить»
+  moveBtn.style.display = 'inline-block';
+});
+
+// Обработчик левого клика: выбор или завершение перетаскивания
+initClickHandler(() => {
+  // Завершаем перетаскивание, если оно было
+  if (endDrag(openMenu, moveBtn)) return;
+
+  // Определяем, по какому зданию кликнули
+  const hit = getBuildingAt(mouseX, mouseY, buildings);
+
+  if (hit) {
     selected = hit;
     openMenu(hit);
+    // при левом клике «Переместить» должно быть скрыто
+    moveBtn.style.display = 'none';
   } else {
     selected = null;
     closeMenu();
   }
+
+  // В зависимости от типа здания — показываем нужную карусель
   if (selected?.kind === 'tavern') {
     openPiratesMenu(selected.level);
   } else if (selected?.kind === 'beast_tavern') {
@@ -73,52 +90,13 @@ export function initEvents() {
   } else {
     closePiratesMenu();
   }
-  });
-
-  collectBtn.addEventListener('click', () => {
-    if (selected?.kind === 'mine') {
-      selected.collect();
-      updateResourcesUI();
-      openMenu(selected);
-    }
-  });
-
-
-  upgradeBtn.addEventListener('click', () => {
-  if (selected) {
-    selected.startUpgrade();
-    // сразу перерисовать меню — покажет прогресс-бар и кнопку «Ускорить»
-    openMenu(selected);
-  }
 });
 
-
-  speedupBtn.addEventListener('click', () => {
-  if (!selected?.upgrading) return;
-  const now = Date.now();
-  const remMs = selected.upgradeDuration - (now - selected.upgradeStart);
-  if (remMs <= 0) return;
-  const cost = Math.ceil((remMs / 60000) / 6);
-  if (resources.cristal < cost) {
-    alert(`Нужно ${cost} кристаллов`);
-    return;
-  }
-  resources.cristal -= cost;
-  updateResourcesUI();
-  selected.finishUpgrade();
-  // и после завершения апгрейда тоже обновить меню,
-  // чтобы отобразить новый уровень и разблокированные пиратов
-  openMenu(selected);
-});
-
-  moveBtn.addEventListener('click', () => {
-  if (!selected) return;
-  moving = true;
-  moveTarget = selected;   // фиксируем именно это здание
-  closeMenu();             // прячем меню, переходим в режим перемещения
-});
-
-  canvas.addEventListener('mouseleave', () => {
-    tooltip.style.display = 'none';
-  });
+// Обработчик движения указателя: перемещение и тултип
+// Инициализируем обработчики движения мыши и ухода курсора с канваса
+// Передаем функции для обновления координат мыши
+initPointerController(
+  x => { mouseX = x; },
+  y => { mouseY = y; }
+);
 }

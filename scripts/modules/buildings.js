@@ -1,7 +1,14 @@
 // buildings.js
+/*
+Модуль для работы со зданиями в игре.
+Содержит классы и функции для создания, обновления и взаимодействия со зданиями.
+Включает в себя логику сбора ресурсов, улучшения зданий и отображения информации о них.
+Также содержит функции для управления ресурсами и буферами.
+*/ 
 import { formatNum } from './utils.js';
 import { mouseX, mouseY, selected } from './events.js';
-import { updateResourcesUI, openPiratesMenu } from './ui.js';
+import { updateResourcesUI } from './ui.js';
+import { openPiratesMenu, openBeastsMenu } from './unitCarousel.js';
 
 export const resources = { gold: 0, wood: 0, stone: 0, cristal: 0 };
 export const buffers = { gold: 0, wood: 0, stone: 0, cristal: 0 };
@@ -106,24 +113,30 @@ getAvailablePirates() {
     buffers[this.type] = 0;
   }
 
+  /**
+   * Пытается запустить апгрейд.
+   * @returns {boolean} true — если апгрейд стартовал, false — если не хватило ресурсов.
+   */
   startUpgrade() {
     const cost = this.getUpgradeCost();
     const missing = [];
     ['gold', 'wood', 'stone', 'cristal'].forEach(r => {
       if (resources[r] < cost[r]) missing.push(`${cost[r] - resources[r]} ${r}`);
     });
-    if (missing.length) return alert('Не хватает: ' + missing.join(', '));
+    if (missing.length) {
+      alert('Не хватает: ' + missing.join(', '));
+      return false;
+    }
+    // ресурсы достаточно — списываем и запускаем апгрейд
     ['gold', 'wood', 'stone', 'cristal'].forEach(r => resources[r] -= cost[r]);
-
     updateResourcesUI();
-
     this.upgrading = true;
     this.upgradeStart = Date.now();
-    // очищаем возможный inline-style
-  const menuProgress = document.getElementById('menu-progress');
-  if (menuProgress) menuProgress.style.removeProperty('display');
-    const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300]; // Время улучшения в минутах
+    const menuProgress = document.getElementById('menu-progress');
+    if (menuProgress) menuProgress.style.removeProperty('display');
+    const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300];
     this.upgradeDuration = durations[this.level - 1] * 60000;
+    return true;
   }
 
   finishUpgrade() {
@@ -149,8 +162,9 @@ getAvailablePirates() {
     if (this.kind === 'tavern') {
   openPiratesMenu(this.level);
   } else if (this.kind === 'beast_tavern') {
+  
   // сразу перестраиваем список животных
-  import('./ui.js').then(ui => ui.openBeastsMenu(this.level));
+    openBeastsMenu(this.level);
 }
   }
 
