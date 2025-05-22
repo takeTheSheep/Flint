@@ -1,16 +1,24 @@
-// modules/resourcesUI.js
-// Модуль для обновления отображения ресурсов в UI
+// scripts/modules/resourcesUI.js
+import { store }      from './store.js';
+import { formatNum }  from './utils.js';
 
-import { formatNum } from './utils.js';
-import { resources } from './buildings.js';
+/** Ссылки на DOM-элементы */
+const goldEl    = document.getElementById('gold');
+const woodEl    = document.getElementById('wood');
+const stoneEl   = document.getElementById('stone');
+const cristalEl = document.getElementById('cristal');
 
-/**
- * Обновляет панель ресурсов в DOM.
- * Ожидается, что в index.html есть контейнер с id="resources".
- */
+/** Перерисовывает панель ресурсов из актуального store */
 export function updateResourcesUI() {
-  document.getElementById('gold').textContent    = formatNum(resources.gold);
-  document.getElementById('wood').textContent    = formatNum(resources.wood);
-  document.getElementById('stone').textContent   = formatNum(resources.stone);
-  document.getElementById('cristal').textContent = formatNum(resources.cristal);
+  const { gold, wood, stone, cristal } = store.getState().resources;
+  goldEl.textContent    = formatNum(gold);
+  woodEl.textContent    = formatNum(wood);
+  stoneEl.textContent   = formatNum(stone);
+  cristalEl.textContent = formatNum(cristal);
 }
+
+// Подписываемся на любые изменения “resources” в store
+store.subscribe('resources', updateResourcesUI);
+
+// Делаем первую отрисовку сразу после импорта
+updateResourcesUI();

@@ -6,15 +6,17 @@
 Также содержит функции для управления ресурсами и буферами.
 */ 
 import { formatNum } from './utils.js';
-import { mouseX, mouseY, selected } from './events.js';
-import { updateResourcesUI } from './ui.js';
+import { /* mouseX, mouseY, */ selected } from './events.js';
+import { store } from './store.js';
 import { openPiratesMenu, openBeastsMenu } from './unitCarousel.js';
 
-export const resources = { gold: 0, wood: 0, stone: 0, cristal: 0 };
-export const buffers = { gold: 0, wood: 0, stone: 0, cristal: 0 };
+
+
 
 export class Building {
   constructor(x, y, { kind, type, img, imgClick }) {
+    // уникальный идентификатор по типу и назначению здания
+    this.id = `${kind}_${type}`;
     this.x = x; this.y = y; this.w = 192; this.h = 192;
     this.kind = kind; this.type = type;
     this.level = 1;
@@ -25,6 +27,24 @@ export class Building {
     this.lastCollect = Date.now();
     this.upgrading = false; this.upgradeStart = 0; this.upgradeDuration = 0;
     
+// ———————— Восстанавливаем сохранённое состояние здания ————————
+  const persisted = store.getState().buildings[this.id];
+  if (persisted) {
+    Object.assign(this, {
+      level:           persisted.level,
+      buffer:          persisted.buffer,
+      lastCollect:     persisted.lastCollect,
+      upgrading:       persisted.upgrading,
+      upgradeStart:    persisted.upgradeStart,
+      upgradeDuration: persisted.upgradeDuration
+    });
+  }
+  // Подписка на дальнейшие изменения из store
+  store.subscribe('buildings', (newAll) => {
+    const data = newAll[this.id];
+    if (data) Object.assign(this, data);
+  });
+
   }
 getAvailablePirates() {
     return pirates.filter(pirate => pirate.unlockLevel <= this.level);
@@ -107,70 +127,107 @@ getAvailablePirates() {
   }
 
   collect() {
-    resources[this.type] = Math.min(resources[this.type] + this.buffer,
-      storageMap[this.type].capacity());
-    this.buffer = 0;
-    buffers[this.type] = 0;
-  }
+   const amount = this.buffer;
+ // обнуляем буфер, но НЕ трогаем lastCollect
+  this.buffer = 0;
+  // сохраняем только буфер — таймер продолжается
+  store.updateBuilding(this.id, {
+    buffer: this.buffer
+  });
+  return { [this.type]: amount };
+ }
 
   /**
    * Пытается запустить апгрейд.
    * @returns {boolean} true — если апгрейд стартовал, false — если не хватило ресурсов.
    */
-  startUpgrade() {
-    const cost = this.getUpgradeCost();
-    const missing = [];
-    ['gold', 'wood', 'stone', 'cristal'].forEach(r => {
-      if (resources[r] < cost[r]) missing.push(`${cost[r] - resources[r]} ${r}`);
-    });
-    if (missing.length) {
-      alert('Не хватает: ' + missing.join(', '));
-      return false;
-    }
-    // ресурсы достаточно — списываем и запускаем апгрейд
-    ['gold', 'wood', 'stone', 'cristal'].forEach(r => resources[r] -= cost[r]);
-    updateResourcesUI();
-    this.upgrading = true;
-    this.upgradeStart = Date.now();
-    const menuProgress = document.getElementById('menu-progress');
-    if (menuProgress) menuProgress.style.removeProperty('display');
-    const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300];
-    this.upgradeDuration = durations[this.level - 1] * 60000;
-    return true;
+ /**
+ * Пытается запустить апгрейд здания через store.
+ * @returns {boolean} true — если апгрейд начался, false — если не хватило ресурсов.
+ */
+startUpgrade() {
+  const cost = this.getUpgradeCost();
+  const missing = [];
+  // Получаем текущие ресурсы из store
+  const { resources } = store.getState();
+
+  // Проверяем, хватает ли
+  Object.entries(cost).forEach(([r, amt]) => {
+    if ((resources[r] || 0) < amt) missing.push(`${amt - (resources[r]||0)} ${r}`);
+  });
+  if (missing.length) {
+    alert('Не хватает: ' + missing.join(', '));
+    return false;
   }
 
-  finishUpgrade() {
+  // Списываем ресурсы через store
+  Object.entries(cost).forEach(([r, amt]) =>
+    store.updateResource(r, -amt)
+  );
+
+  // Запускаем апгрейд
+  this.upgrading = true;
+  this.upgradeStart = Date.now();
+  const durations = [1, 15, 30, 60, 90, 120, 180, 240, 300];
+  this.upgradeDuration = durations[this.level - 1] * 60000;
+
+  // Обновляем состояние здания в store
+  store.updateBuilding(this.id, {
+    upgrading: this.upgrading,
+    upgradeStart: this.upgradeStart,
+    upgradeDuration: this.upgradeDuration,
+    level: this.level,
+    buffer: this.buffer,
+    lastCollect: this.lastCollect
+  });
+
+  return true;
+}
+
+  /**
+ * Завершает апгрейд здания: повышает уровень, обновляет UI и сохраняет состояние в store.
+ */
+finishUpgrade() {
+  // 1) Обновляем логическое состояние
   if (this.level < 10) this.level++;
   this.upgrading = false;
 
-  // Если в этот момент открыто меню этого здания —
-  // обновляем все элементы сразу и, для таверны, перестраиваем карусель пиратов.
+  // 2) Сохраняем новое состояние здания в store
+  store.updateBuilding(this.id, {
+    level: this.level,
+    upgrading: this.upgrading,
+    buffer: this.buffer,
+    lastCollect: this.lastCollect,
+    upgradeStart: this.upgradeStart,
+    upgradeDuration: this.upgradeDuration
+  });
+
+  // 3) Если меню этого здания сейчас открыто, обновляем интерфейс
   if (selected === this) {
-    // 1) Текст уровня
+    // Обновляем текст уровня
     const levelEl = document.getElementById('menu-level');
     if (levelEl) levelEl.textContent = `Уровень: ${this.level}`;
 
-    // 2) Скрыть полосу прогресса через класс .hidden
+    // Скрываем индикатор прогресса
     const menuProgress = document.getElementById('menu-progress');
     if (menuProgress) menuProgress.classList.add('hidden');
 
-    // 3) Скрыть кнопку «Ускорить» обычным display
+    // Скрываем кнопку ускорения
     const speedupBtn = document.getElementById('speedup-btn');
     if (speedupBtn) speedupBtn.style.display = 'none';
 
-    // 4) Особенность таверны: сразу перестроить список пиратов
+    // Обновляем карусель для таверны или зверинца
     if (this.kind === 'tavern') {
-  openPiratesMenu(this.level);
-  } else if (this.kind === 'beast_tavern') {
-  
-  // сразу перестраиваем список животных
-    openBeastsMenu(this.level);
-}
+      openPiratesMenu(this.level);
+    } else if (this.kind === 'beast_tavern') {
+      openBeastsMenu(this.level);
+    }
   }
 
-  // Обновляем «буфер» или «хранение» как было у вас
+  // 4) Обновляем отображение буфера или хранилища
   const bufferEl = document.getElementById('menu-buffer');
   if (bufferEl) {
+    const { resources } = store.getState();
     if (this.kind === 'storage') {
       bufferEl.textContent = `Хранение: ${formatNum(resources[this.type])} / ${formatNum(this.capacity())}`;
     } else if (this.kind === 'mine') {
@@ -187,8 +244,12 @@ getAvailablePirates() {
       if (ticks > 0) {
         const amt = this.getHarvestAmount();
         this.buffer = Math.min(this.buffer + ticks * amt, this.getBufferLimit());
-        buffers[this.type] = this.buffer;
-        this.lastCollect += ticks * this.collectInterval;
+ this.lastCollect += ticks * this.collectInterval;
+ // Сохраняем буфер и время
+ store.updateBuilding(this.id, {
+   buffer:      this.buffer,
+   lastCollect: this.lastCollect
+ });
       }
       // Обновляем отображение буфера в реальном времени
     if (selected === this) {

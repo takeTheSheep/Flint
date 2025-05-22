@@ -2,7 +2,7 @@
 // Модуль для работы с каруселью юнитов
 import { pirates } from './pirates.js';
 import { animals } from './animals.js';
-import { resources } from './buildings.js';
+import { store } from './store.js';
 import { updateResourcesUI } from './ui.js';
 
 // DOM-элементы карусели и overlay
@@ -122,16 +122,20 @@ carouselRight.addEventListener('click', () => piratesList.scrollBy({ left:  100,
  * Обработчик найма
  */
 function hirePirate(p) {
+  // Берём актуальные ресурсы из store
+  const { gold: G, wood: W, stone: S } = store.getState().resources;
   const { gold, wood, stone } = p.cost;
   const missing = [];
-  if (resources.gold  < gold)  missing.push(`золота ${gold  - resources.gold}`);
-  if (resources.wood  < wood)  missing.push(`дерева ${wood  - resources.wood}`);
-  if (resources.stone < stone) missing.push(`камня ${stone - resources.stone}`);
+  if (G < gold)   missing.push(`золота ${gold  - G}`);
+  if (W < wood)   missing.push(`дерева ${wood  - W}`);
+  if (S < stone)  missing.push(`камня ${stone - S}`);
 
   if (missing.length === 0) {
-    resources.gold  -= gold;
-    resources.wood  -= wood;
-    resources.stone -= stone;
+    // Списываем через store
+    store.updateResource('gold',  -gold);
+    store.updateResource('wood',  -wood);
+    store.updateResource('stone', -stone);
+    // Обновляем отображение ресурсов
     updateResourcesUI();
     alert(`${p.name} нанят!`);
   } else {

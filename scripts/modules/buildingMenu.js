@@ -4,17 +4,14 @@
 // Этот модуль содержит функции для открытия и закрытия меню зданий,
 // а также для обработки событий, связанных с улучшением и сбором ресурсов.
 // Он также экспортирует функции для инициализации меню и обработки событий.
+
 import { formatNum, names, storageNames } from './utils.js';
-import { resources }                     from './buildings.js';
-import {
-  openPiratesMenu,
-  openBeastsMenu,
-  closePiratesMenu
-} from './unitCarousel.js';
-import { updateResourcesUI } from './ui.js';                // добавить
-import { selected } from './events.js';               // добавить
-import { handleTavernMenu } from './tavernMenu.js';
-import { startDrag } from './dragAndDrop.js';
+import { closePiratesMenu }               from './unitCarousel.js';
+import { selected }                       from './events.js';
+import { handleTavernMenu }               from './tavernMenu.js';
+import { startDrag }                      from './dragAndDrop.js';
+import { store }                          from './store.js';
+import { storageMap }                    from './buildings.js';
 
 
 export { menu, collectBtn, upgradeBtn, speedupBtn };
@@ -62,23 +59,24 @@ export function openMenu(b) {
   
 
 
-  // === Новый блок: обрабатываем буфер и кнопку «Собрать» по типу здания ===
-  if (b.kind === 'tavern' || b.kind === 'beast_tavern') {
-    // Для таверны не показываем буфер/хранение
-    bufferEl.classList.add('hidden');
-    collectBtn.style.display = 'none';
-  } else if (b.kind === 'mine') {
-    // Шахта: буфер и прогресс сбора
+ if (b.kind === 'mine') {
+    // Шахта: показываем буфер и кнопку «Собрать»
     bufferEl.classList.remove('hidden');
     bufferEl.textContent      = `Буфер: ${formatNum(b.buffer)} / ${formatNum(b.getBufferLimit())}`;
     collectBtn.style.display  = 'inline-block';
     document.getElementById('menu-harvest-progress').classList.remove('hidden');
-  } else {
-    // Всё остальное (хранилища): показываем хранение
+  } else if (b.kind === 'storage') {
+    // Хранилище: показываем текущее количество из store
+    const current = store.getState().resources[b.type] || 0;
     bufferEl.classList.remove('hidden');
-    bufferEl.textContent      = `Хранение: ${formatNum(resources[b.type])} / ${formatNum(b.capacity())}`;
-    collectBtn.style.display  = 'none';
+    bufferEl.textContent     = `Хранение: ${formatNum(current)} / ${formatNum(b.capacity())}`;
+    collectBtn.style.display = 'none';
+  } else {
+    // Таверна и зверинец: скрываем всё
+    bufferEl.classList.add('hidden');
+    collectBtn.style.display = 'none';
   }
+
   // === Конец нового блока ===
 
   // Кнопка «Улучшить» и стоимость
@@ -111,41 +109,57 @@ export function closeMenu() {
 export function initBuildingMenu() {
   document.getElementById('menu-close').addEventListener('click', closeMenu);
 
-  collectBtn.addEventListener('click', () => {
-    if (selected?.kind === 'mine') {
-      selected.collect();
-      updateResourcesUI();
-      openMenu(selected);
+  // -- Сбор с шахты/хранилища --
+collectBtn.addEventListener('click', () => {
+  if (selected?.kind === 'mine') {
+    const type    = selected.type;                            // например 'wood', 'gold' и т.д.
+    const buffer  = selected.buffer;                            
+    const current = store.getState().resources[type] || 0;      
+    const cap     = storageMap[type].capacity();                
+
+    if (buffer <= 0) return;          // ничего не накопилось
+
+    const spaceLeft  = cap - current;  
+    if (spaceLeft <= 0) {             // хранилище уже полное
+      alert('Хранилище переполнено');
+     return;
     }
-  });
 
+    // сколько реально забираем
+    const toCollect = Math.min(buffer, spaceLeft);
 
-  upgradeBtn.addEventListener('click', () => {
-  if (!selected) return;
-   // startUpgrade() теперь возвращает true только при реальном старте
-   const kickedOff = selected.startUpgrade();
-   if (kickedOff) {
-     openMenu(selected);
+    
+     // уменьшаем буфер, НЕ трогаем таймер
+ selected.buffer = buffer - toCollect;
+ store.updateBuilding(selected.id, {
+   buffer: selected.buffer
+ });
+    const collected = { [type]: toCollect };
+    store.collectFromBuilding(selected.id, collected);
+    openMenu(selected);  // обновить окно
   }
-  
 });
 
 
-  speedupBtn.addEventListener('click', () => {
+// -- Улучшение здания --
+upgradeBtn.addEventListener('click', () => {
+  if (selected.startUpgrade()) openMenu(selected);
+});
+
+// -- Ускорить апгрейд за кристаллы --
+speedupBtn.addEventListener('click', () => {
   if (!selected?.upgrading) return;
-  const now = Date.now();
+  const now   = Date.now();
   const remMs = selected.upgradeDuration - (now - selected.upgradeStart);
   if (remMs <= 0) return;
   const cost = Math.ceil((remMs / 60000) / 6);
-  if (resources.cristal < cost) {
+  const { cristal } = store.getState().resources;
+  if (cristal < cost) {
     alert(`Нужно ${cost} кристаллов`);
     return;
   }
-  resources.cristal -= cost;
-  updateResourcesUI();
+  store.updateResource('cristal', -cost);
   selected.finishUpgrade();
-  // и после завершения апгрейда тоже обновить меню,
-  // чтобы отобразить новый уровень и разблокированные пиратов
   openMenu(selected);
 });
 
