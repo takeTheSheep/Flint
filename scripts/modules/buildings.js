@@ -27,18 +27,28 @@ export class Building {
     this.lastCollect = Date.now();
     this.upgrading = false; this.upgradeStart = 0; this.upgradeDuration = 0;
     
-// ———————— Восстанавливаем сохранённое состояние здания ————————
-  const persisted = store.getState().buildings[this.id];
-  if (persisted) {
-    Object.assign(this, {
-      level:           persisted.level,
-      buffer:          persisted.buffer,
-      lastCollect:     persisted.lastCollect,
-      upgrading:       persisted.upgrading,
-      upgradeStart:    persisted.upgradeStart,
-      upgradeDuration: persisted.upgradeDuration
-    });
-  }
+// —————— Восстанавливаем или инициализируем запись в store ——————
+   const persisted = store.getState().buildings[this.id];
+   if (persisted) {
+     // присваиваем только реально существующие поля
+     if (persisted.level        != null) this.level        = persisted.level;
+     if (persisted.buffer       != null) this.buffer       = persisted.buffer;
+     if (persisted.lastCollect  != null) this.lastCollect  = persisted.lastCollect;
+     if (persisted.upgrading    != null) this.upgrading    = persisted.upgrading;
+     if (persisted.upgradeStart != null) this.upgradeStart = persisted.upgradeStart;
+    if (persisted.upgradeDuration != null)
+       this.upgradeDuration = persisted.upgradeDuration;
+   } else {
+     // первый раз — сохраняем дефолтное состояние
+    store.updateBuilding(this.id, {
+       level:        this.level,
+       buffer:       this.buffer,
+       lastCollect:  this.lastCollect,
+       upgrading:    this.upgrading,
+       upgradeStart: this.upgradeStart,
+       upgradeDuration: this.upgradeDuration
+     });
+   }
   // Подписка на дальнейшие изменения из store
   store.subscribe('buildings', (newAll) => {
     const data = newAll[this.id];
